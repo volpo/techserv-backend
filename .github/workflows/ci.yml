@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: techserv
+          POSTGRES_PASSWORD: techserv
+          POSTGRES_DB: techserv
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U techserv"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint
+        run: ruff check app tests
+
+      - name: Test
+        env:
+          SUPABASE_JWT_SECRET: test-secret
+        run: pytest --cov=app --cov-report=term-missing
+
+      - name: Build Docker image
+        run: docker build -t techserv-backend .
