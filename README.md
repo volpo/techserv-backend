@@ -8,7 +8,7 @@ API base con autenticación **JWT local** (sin Supabase), usuarios/roles y healt
 - Auth propia: **bcrypt** (contraseñas) + **python-jose** (JWT)
 - Modelo `users` + `companies`
 - Endpoints de auth: `POST /auth/register`, `POST /auth/login`
-- Endpoints protegidos: `GET /me`, CRUD usuarios (admin)
+- Endpoints protegidos: `GET /health`, `GET /me`, CRUD usuarios (admin)
 - CI con GitHub Actions
 - Documentación OpenAPI en `/docs`
 
