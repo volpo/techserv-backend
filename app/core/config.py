@@ -12,14 +12,14 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://techserv:techserv@localhost:5432/techserv"
     database_url_sync: str = "postgresql://techserv:techserv@localhost:5432/techserv"
 
-    supabase_url: str = ""
-    supabase_jwt_secret: str = "dev-secret-change-in-production"
-
     redis_url: str = "redis://localhost:6379/0"
 
     cors_origins: str = "http://localhost:3000,http://localhost:8081"
 
+    jwt_secret_key: str = "change-me-in-production-use-long-random-string"
     jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60
+
     testing: bool = False
 
     @property

@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_roles
-from app.core.security import UserRole
+from app.core.security import UserRole, hash_password
 from app.models import User
 from app.schemas.user import MeResponse, UserCreate, UserRead, UserUpdate
 
@@ -38,12 +39,13 @@ async def create_user(
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
-        id=payload.id,
+        id=payload.id or uuid.uuid4(),
         email=payload.email,
         full_name=payload.full_name,
         role=payload.role,
         company_id=payload.company_id,
         phone=payload.phone,
+        password_hash=hash_password(payload.password),
     )
     db.add(user)
     await db.flush()
@@ -58,14 +60,15 @@ async def update_user(
     _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    import uuid
-
     result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
     user = result.scalar_one_or_none()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    if "password" in data:
+        user.password_hash = hash_password(data.pop("password"))
+    for field, value in data.items():
         setattr(user, field, value)
     await db.flush()
     await db.refresh(user)

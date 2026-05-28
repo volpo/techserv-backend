@@ -1,13 +1,14 @@
 # TechServ Backend — Etapa 0
 
-API base con autenticación JWT (Supabase Auth), usuarios/roles y health check.
+API base con autenticación **JWT local** (sin Supabase), usuarios/roles y health check.
 
 ## Alcance (Etapa 0)
 
-- FastAPI + PostgreSQL + Redis (Docker Compose)
-- Validación JWT de Supabase en el backend
-- Modelo `users` + `companies` (sync con `auth.users` de Supabase)
-- Endpoints: `GET /health`, `GET /me`, CRUD usuarios (solo administrador)
+- FastAPI + PostgreSQL local (Docker Compose) + Redis
+- Auth propia: **bcrypt** (contraseñas) + **python-jose** (JWT)
+- Modelo `users` + `companies`
+- Endpoints de auth: `POST /auth/register`, `POST /auth/login`
+- Endpoints protegidos: `GET /me`, CRUD usuarios (admin)
 - CI con GitHub Actions
 - Documentación OpenAPI en `/docs`
 
@@ -16,20 +17,59 @@ API base con autenticación JWT (Supabase Auth), usuarios/roles y health check.
 ```bash
 cp .env.example .env
 docker compose up -d db redis
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
+python -m pip install -r requirements.txt
+python -m alembic upgrade head
+python -m uvicorn app.main:app --reload
 ```
 
 ## Autenticación JWT (frontend)
 
-```typescript
-const { data: { session } } = await supabase.auth.getSession()
-const token = session?.access_token
+### 1. Login
 
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{"email": "admin@techserv.local", "password": "admin123"}
+```
+
+Respuesta:
+
+```json
+{
+  "access_token": "eyJ...",
+  "token_type": "bearer"
+}
+```
+
+### 2. Usar el token
+
+```typescript
 const res = await fetch(`${API_URL}/api/v1/me`, {
-  headers: { Authorization: `Bearer ${token}` },
+  headers: { Authorization: `Bearer ${access_token}` },
 })
+```
+
+### 3. Registro (cliente, técnico, etc. — no administrador)
+
+```http
+POST /api/v1/auth/register
+{"email": "...", "password": "...", "full_name": "...", "role": "cliente"}
+```
+
+## Variables de entorno
+
+| Variable | Descripción |
+|----------|-------------|
+| `JWT_SECRET_KEY` | Clave para firmar JWT (generar una larga y aleatoria) |
+| `JWT_EXPIRE_MINUTES` | Duración del token (default 60) |
+| `DATABASE_URL` | PostgreSQL async (FastAPI) |
+| `DATABASE_URL_SYNC` | PostgreSQL sync (Alembic) |
+
+Generar secret:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 ## Endpoints
@@ -37,39 +77,37 @@ const res = await fetch(`${API_URL}/api/v1/me`, {
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
 | GET | `/api/v1/health` | No | Health check |
+| POST | `/api/v1/auth/register` | No | Registro |
+| POST | `/api/v1/auth/login` | No | Login → JWT |
 | GET | `/api/v1/me` | JWT | Usuario autenticado |
 | GET | `/api/v1/users` | Admin | Listar usuarios |
-| POST | `/api/v1/users` | Admin | Crear usuario |
+| POST | `/api/v1/users` | Admin | Crear usuario (con password) |
 | PATCH | `/api/v1/users/{id}` | Admin | Actualizar usuario |
+
+## Crear el primer administrador
+
+Con la API levantada, un admin existente puede crear otro vía `POST /users`, o insertar en SQL:
+
+```sql
+-- password: admin123 (generar hash con POST /auth/register de un supervisor primero, o usar /users como admin seed)
+```
+
+**Opción recomendada:** crear el primer admin con script o `POST /api/v1/users` después de un seed manual.
+
+Seed rápido vía registro + SQL para cambiar rol, o usar este flujo en Swagger:
+
+1. `POST /auth/register` con rol `supervisor`
+2. En DB: `UPDATE users SET role = 'administrador' WHERE email = '...';`
+3. Login y usar `POST /users` para el resto
 
 ## Roles
 
 `cliente`, `tecnico`, `supervisor`, `administrador`, `area_administrativa`
 
-## Supabase — sync de usuarios
-
-Al registrarse en Supabase Auth, crear el perfil en `users` con el mismo UUID:
-
-```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.users (id, email, full_name, role)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'cliente')
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
-
 ## Tests
 
 ```bash
-pytest
+python -m pytest
 ```
 
 ## Documentación de diseño
@@ -79,3 +117,5 @@ pytest
 - [Diagrama de secuencias](docs/diagrama-secuencias.md)
 - [Casos de uso](docs/diagrama-casos-de-uso.md)
 - [Diagrama de actividades](docs/diagrama-actividades.md)
+
+> **Nota:** Auth ya no usa Supabase. JWT y usuarios viven en PostgreSQL local.

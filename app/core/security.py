@@ -1,7 +1,8 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
+import bcrypt
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
@@ -23,13 +24,41 @@ class TokenPayload(BaseModel):
     exp: int | None = None
 
 
-def decode_supabase_jwt(token: str) -> TokenPayload:
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"),
+        hashed_password.encode("utf-8"),
+    )
+
+
+def create_access_token(
+    user_id: uuid.UUID,
+    email: str,
+    role: UserRole,
+    expires_minutes: int | None = None,
+) -> str:
+    now = datetime.now(UTC)
+    expire = now + timedelta(minutes=expires_minutes or settings.jwt_expire_minutes)
+    payload = {
+        "sub": str(user_id),
+        "email": email,
+        "role": role.value if isinstance(role, UserRole) else role,
+        "iat": int(now.timestamp()),
+        "exp": int(expire.timestamp()),
+    }
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
+def decode_jwt(token: str) -> TokenPayload:
     try:
         payload = jwt.decode(
             token,
-            settings.supabase_jwt_secret,
+            settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
-            options={"verify_aud": False},
         )
     except JWTError as exc:
         raise ValueError("Invalid or expired token") from exc
@@ -41,7 +70,7 @@ def decode_supabase_jwt(token: str) -> TokenPayload:
     return TokenPayload(
         sub=sub,
         email=payload.get("email"),
-        role=payload.get("role") or payload.get("user_metadata", {}).get("role"),
+        role=payload.get("role"),
         exp=payload.get("exp"),
     )
 
@@ -51,12 +80,4 @@ def create_test_token(
     email: str = "test@techserv.local",
     role: UserRole = UserRole.ADMINISTRADOR,
 ) -> str:
-    now = datetime.now(UTC)
-    payload = {
-        "sub": str(user_id),
-        "email": email,
-        "role": role.value,
-        "iat": int(now.timestamp()),
-        "exp": int(now.timestamp()) + 3600,
-    }
-    return jwt.encode(payload, settings.supabase_jwt_secret, algorithm=settings.jwt_algorithm)
+    return create_access_token(user_id, email, role, expires_minutes=60)

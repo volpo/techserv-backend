@@ -15,7 +15,8 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    id: uuid.UUID
+    password: str = Field(min_length=6, max_length=128)
+    id: uuid.UUID | None = None
 
 
 class UserUpdate(BaseModel):
@@ -23,6 +24,7 @@ class UserUpdate(BaseModel):
     role: UserRole | None = None
     phone: str | None = None
     is_active: bool | None = None
+    password: str | None = Field(default=None, min_length=6, max_length=128)
 
 
 class UserRead(UserBase):

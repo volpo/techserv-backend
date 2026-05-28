@@ -1,7 +1,7 @@
 import os
 
 os.environ.setdefault("DEBUG", "false")
-os.environ.setdefault("SUPABASE_JWT_SECRET", "test-secret")
+os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-pytest-only")
 
 import uuid
 from collections.abc import AsyncGenerator
@@ -12,7 +12,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.database import Base, get_db
-from app.core.security import UserRole, create_test_token
+from app.core.security import UserRole, create_access_token, hash_password
 from app.main import app
 from app.models import Company, User
 
@@ -42,6 +42,7 @@ async def seeded_session(db_session: AsyncSession) -> AsyncSession:
         full_name="Admin User",
         role=UserRole.ADMINISTRADOR,
         company_id=company.id,
+        password_hash=hash_password("admin123"),
     )
     db_session.add(company)
     db_session.add(admin)
@@ -66,4 +67,4 @@ async def client(seeded_session: AsyncSession) -> AsyncGenerator[AsyncClient, No
 @pytest.fixture
 def admin_token(seeded_session: AsyncSession) -> str:
     admin: User = seeded_session.info["admin"]
-    return create_test_token(admin.id, admin.email, UserRole(admin.role))
+    return create_access_token(admin.id, admin.email, UserRole(admin.role))

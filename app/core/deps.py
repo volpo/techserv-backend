@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import TokenPayload, UserRole, decode_supabase_jwt
+from app.core.security import TokenPayload, UserRole, decode_jwt
 from app.models import User
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -22,7 +22,7 @@ async def get_token_payload(
             detail="Missing or invalid authorization header",
         )
     try:
-        return decode_supabase_jwt(credentials.credentials)
+        return decode_jwt(credentials.credentials)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
