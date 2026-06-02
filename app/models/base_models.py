@@ -37,5 +37,23 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+    equipos: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("equipos.id"), nullable=True
+    )
 
     company: Mapped[Company | None] = relationship(back_populates="users")
+    equipos: Mapped[list["Equipo"] | None] = relationship(back_populates="users")
+
+class Equipo(Base):
+    __tablename__ = "equipos"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tipo: Mapped[str] = mapped_column(String(255), nullable=False)
+    marca: Mapped[str] = mapped_column(String(255), nullable=False)
+    modelo: Mapped[str] = mapped_column(String(255), nullable=False)
+    numero_serie: Mapped[str] = mapped_column(String(255), nullable=False)
+    cliente_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+    )
+
+    users: Mapped[User] = relationship(back_populates="equipos")

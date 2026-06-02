@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     jwt_secret_key: str = "change-me-in-production-use-long-random-string"
     jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 60
+    jwt_expire_minutes: int = 15
 
     testing: bool = False
 
