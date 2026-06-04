@@ -31,9 +31,15 @@ async def list_users(
 @router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(
     payload: UserCreate,
-    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR))],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
+    if payload.role == UserRole.ADMINISTRADOR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot register an administrador",
+        )
+    
     existing = await db.execute(select(User).where(User.email == payload.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")

@@ -17,6 +17,19 @@ class UserRole(StrEnum):
     AREA_ADMINISTRATIVA = "area_administrativa"
 
 
+class EstadoTicket(StrEnum):
+    ABIERTO = "abierto"
+    EN_DIAGNOSTICO = "en_diagnostico"
+    EN_PROCESO = "en_proceso"
+    RESUELTO = "resuelto"
+
+
+class UrgenciaTicket(StrEnum):
+    ALTA = "alta"
+    MEDIA = "media"
+    BAJA = "baja"
+
+
 class TokenPayload(BaseModel):
     sub: str
     email: str | None = None
