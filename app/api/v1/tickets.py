@@ -15,16 +15,24 @@ router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 @router.get("", response_model=list[TicketRead])
 async def list_tickets(
-    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA))],
+    current_user: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA, UserRole.TECNICO, UserRole.CLIENTE, UserRole.SUPERVISOR))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Ticket]:
-    result = await db.execute(select(Ticket).order_by(Ticket.fecha_creacion.desc()))
+    query = select(Ticket).order_by(Ticket.fecha_creacion.desc())
+
+    if current_user.role == UserRole.CLIENTE:
+        query = query.where(Ticket.cliente_id == current_user.id)
+
+    if current_user.role == UserRole.TECNICO:
+        query = query.where(Ticket.tecnico_id == current_user.id)
+    
+    result = await db.execute(query)
     return list(result.scalars().all())
 
 @router.post("", response_model=TicketRead, status_code=status.HTTP_201_CREATED)
 async def create_ticket(
     payload: TicketCreate,
-    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA))],
+    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.CLIENTE))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     ticket = Ticket(
