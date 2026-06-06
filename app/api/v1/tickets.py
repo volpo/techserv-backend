@@ -29,6 +29,26 @@ async def list_tickets(
     result = await db.execute(query)
     return list(result.scalars().all())
 
+@router.get("/{id}", response_model=TicketRead, status_code=status.HTTP_200_OK)
+async def one_ticket(
+    current_user: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA, UserRole.TECNICO, UserRole.CLIENTE, UserRole.SUPERVISOR))],
+    id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[Ticket]:
+    query = select(Ticket).where(Ticket.id == id)
+    result = await db.execute(query)
+    ticket = result.scalars().first()
+
+    if not ticket: raise HTTPException(404, "Ticket not found")
+
+    if current_user.role == UserRole.CLIENTE:
+        if current_user.id != ticket.cliente_id : raise HTTPException(403, "Insufficient privileges")
+
+    if current_user.role == UserRole.TECNICO:
+        if current_user.id != ticket.tecnico_id : raise HTTPException(403, "Insufficient privileges")
+    
+    return ticket
+
 @router.post("", response_model=TicketRead, status_code=status.HTTP_201_CREATED)
 async def create_ticket(
     payload: TicketCreate,
