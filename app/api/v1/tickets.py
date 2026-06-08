@@ -52,16 +52,16 @@ async def one_ticket(
 @router.post("", response_model=TicketRead, status_code=status.HTTP_201_CREATED)
 async def create_ticket(
     payload: TicketCreate,
-    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.CLIENTE))],
+    current_user: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.CLIENTE))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     ticket = Ticket(
         id=payload.id or uuid.uuid4(),
         titulo=payload.titulo,
         descripcion=payload.descripcion,
-        estado=payload.estado,
+        estado=payload.estado or EstadoTicket.ABIERTO,
         urgencia=payload.urgencia,
-        cliente_id=payload.cliente_id,
+        cliente_id=payload.cliente_id or current_user.id,
         tecnico_id=payload.tecnico_id,
         equipo_id=payload.equipo_id
     )
