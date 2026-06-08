@@ -8,11 +8,12 @@ from app.core.security import EstadoTicket, UrgenciaTicket
 class Ticket(BaseModel):
     titulo: str = Field(min_length=3, max_length=255)
     descripcion: str = Field(min_length=3, max_length=255)
-    estado: EstadoTicket
+    estado: EstadoTicket | None = None
     urgencia: UrgenciaTicket
+    fecha_creacion: datetime | None = None
     fecha_cierre: datetime | None = None
-    cliente_id: uuid.UUID
-    tecnico_id: uuid.UUID
+    cliente_id: uuid.UUID | None = None
+    tecnico_id: uuid.UUID | None = None
     equipo_id: uuid.UUID | None = None
 
 class TicketRead(Ticket):

@@ -78,7 +78,7 @@ class Ticket(Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
     tecnico_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
     equipo_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("equipos.id"), nullable=False
