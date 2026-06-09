@@ -27,6 +27,22 @@ async def list_users(
     result = await db.execute(select(User).order_by(User.created_at.desc()))
     return list(result.scalars().all())
 
+@router.get("/tecnicos", response_model=list[UserRead])
+async def list_tecnicos(
+    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA, UserRole.SUPERVISOR))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[User]:
+    result = await db.execute(select(User).where(User.role == UserRole.TECNICO).order_by(User.full_name.asc()))
+    return list(result.scalars().all())
+
+@router.get("/clientes", response_model=list[UserRead])
+async def list_clientes(
+    _: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA, UserRole.SUPERVISOR))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[User]:
+    result = await db.execute(select(User).where(User.role == UserRole.CLIENTE).order_by(User.full_name.asc()))
+    return list(result.scalars().all())
+
 
 @router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(
