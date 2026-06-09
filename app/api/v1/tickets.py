@@ -61,6 +61,7 @@ async def create_ticket(
         descripcion=payload.descripcion,
         estado=payload.estado or EstadoTicket.ABIERTO,
         urgencia=payload.urgencia,
+        direccion=payload.direccion,
         cliente_id=payload.cliente_id or current_user.id,
         tecnico_id=payload.tecnico_id,
         equipo_id=payload.equipo_id
