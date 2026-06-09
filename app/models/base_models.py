@@ -54,6 +54,7 @@ class Equipo(Base):
     marca: Mapped[str] = mapped_column(String(255), nullable=False)
     modelo: Mapped[str] = mapped_column(String(255), nullable=False)
     numero_serie: Mapped[str] = mapped_column(String(255), nullable=False)
+    fecha_creacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     cliente_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
