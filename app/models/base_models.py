@@ -72,6 +72,7 @@ class Ticket(Base):
     descripcion: Mapped[str] = mapped_column(String(255), nullable=False)
     estado: Mapped[EstadoTicket] = mapped_column(String(255), nullable=False)
     urgencia: Mapped[UrgenciaTicket] = mapped_column(String(255), nullable=False)
+    direccion: Mapped[str] = mapped_column(String(255), nullable=True)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     fecha_cierre: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cliente_id: Mapped[uuid.UUID] = mapped_column(

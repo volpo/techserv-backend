@@ -10,6 +10,7 @@ class Ticket(BaseModel):
     descripcion: str = Field(min_length=3, max_length=255)
     estado: EstadoTicket | None = None
     urgencia: UrgenciaTicket
+    direccion: str = Field(min_length=1, max_length=255)
     fecha_creacion: datetime | None = None
     fecha_cierre: datetime | None = None
     cliente_id: uuid.UUID | None = None
