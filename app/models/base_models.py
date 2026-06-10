@@ -63,7 +63,7 @@ class Equipo(Base):
     )
 
     users: Mapped[User] = relationship(back_populates="equipos")
-    tickets: Mapped[list["Ticket"] | None] = relationship(back_populates="equipos")
+    tickets: Mapped[list["Ticket"] | None] = relationship(back_populates="equipo")
 
 class Ticket(Base):
     __tablename__ = "tickets"
@@ -88,4 +88,4 @@ class Ticket(Base):
 
     cliente: Mapped["User"] = relationship("User", foreign_keys=[cliente_id], back_populates="tickets_como_cliente")
     tecnico: Mapped["User"] = relationship("User", foreign_keys=[tecnico_id], back_populates="tickets_como_tecnico")
-    equipos: Mapped[Equipo] = relationship(back_populates="tickets")        
+    equipo: Mapped[Equipo] = relationship(back_populates="tickets")        

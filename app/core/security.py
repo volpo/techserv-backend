@@ -63,6 +63,7 @@ def create_access_token(
         "iat": int(now.timestamp()),
         "exp": int(expire.timestamp()),
     }
+    print(f"JWT enviado: {jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)}")
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 

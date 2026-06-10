@@ -16,6 +16,10 @@ bearer_scheme = HTTPBearer(auto_error=False)
 async def get_token_payload(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
 ) -> TokenPayload:
+    print(f"DEBUG - OBJETO CREDENTIALS: {credentials}")
+    if credentials:
+        print(f"DEBUG - SCHEME DETECTADO: {credentials.scheme}")
+        print(f"DEBUG - TOKEN DETECTADO: {credentials.credentials}")
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
