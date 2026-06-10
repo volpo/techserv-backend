@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -18,7 +19,10 @@ async def list_tickets(
     current_user: Annotated[User, Depends(require_roles(UserRole.ADMINISTRADOR, UserRole.AREA_ADMINISTRATIVA, UserRole.TECNICO, UserRole.CLIENTE, UserRole.SUPERVISOR))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Ticket]:
-    query = select(Ticket).order_by(Ticket.fecha_creacion.desc())
+    query = select(Ticket).options(
+        joinedload(Ticket.cliente), 
+        joinedload(Ticket.tecnico), 
+        joinedload(Ticket.equipo)).order_by(Ticket.fecha_creacion.desc())
 
     if current_user.role == UserRole.CLIENTE:
         query = query.where(Ticket.cliente_id == current_user.id)
@@ -35,7 +39,10 @@ async def one_ticket(
     id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Ticket]:
-    query = select(Ticket).where(Ticket.id == id)
+    query = select(Ticket).options(
+        joinedload(Ticket.cliente), 
+        joinedload(Ticket.tecnico), 
+        joinedload(Ticket.equipo)).where(Ticket.id == id)
     result = await db.execute(query)
     ticket = result.scalars().first()
 
