@@ -50,3 +50,6 @@ class TicketCreate(Ticket):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID | None = None
+
+class TicketUpdate(BaseModel):
+    estado: EstadoTicket | None = None
