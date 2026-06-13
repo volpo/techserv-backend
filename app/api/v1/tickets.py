@@ -75,7 +75,16 @@ async def create_ticket(
     )
     db.add(ticket)
     await db.flush()
-    await db.refresh(ticket)
+    query_vuelto_a_cargar = (
+        select(Ticket)
+        .options(
+            joinedload(Ticket.cliente),
+            joinedload(Ticket.equipo)
+        )
+        .where(Ticket.id == ticket.id)
+    )
+    result = await db.execute(query_vuelto_a_cargar)
+    ticket = result.scalars().first()
     return ticket
 
 @router.patch("/{id}", response_model=TicketRead, status_code=status.HTTP_200_OK)
